@@ -64,10 +64,6 @@ class aidsbot ():
         '''Add function as handler for command'''
         self.handler[command]=function
 
-    def defaulthandler(self,function):
-        '''Define a default handler'''
-        self.defaulthandler=function
-
     def data_split(self,data):
         '''Split data for easy usage'''
         data = data.split()
@@ -79,6 +75,14 @@ class aidsbot ():
             message = message + " " + data[i]
         return user_info, msg_type, channel, message        
 
+    def user_split(self,data):
+        '''Split the user-data'''
+        nick, rest = data.split("!")
+        nick=nick.replace(":","",1)
+        real_user=rest.split("@")[0]
+        host=rest.split("@")[1]
+        return nick, real_user, host
+
     def listen(self):
         '''Start listener in thread'''
         thread.start_new_thread(self.listener, ())
@@ -86,7 +90,7 @@ class aidsbot ():
     def listener(self):
         '''Listener, should be started from listen() instead'''
         while self.run:
-            data = self.socket.recv(4096)
+            data = self.socket.recv(512)
             
             if data.find('PING') != -1:
                 self.socket.send('PONG ' + data.split()[1] + "\r\n")

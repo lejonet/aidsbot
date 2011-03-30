@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python -B
 
 '''
 
@@ -60,7 +60,16 @@ class aidsbot ():
 
     def handler_add(self,command,function):
         '''Add function as handler for command'''
+        command = ":" + command
         self.handler[command]=function
+
+    def joinhandler(self,function):
+        '''Set joinhandler'''
+        self.joinhandler=function
+
+    def parthandler(self,function):
+        '''Set parthandler'''
+        self.parthandler=function
 
     def data_split(self,data):
         '''Split data for easy usage'''
@@ -96,12 +105,17 @@ class aidsbot ():
 
             #Handle user commands
             user_input = data.split()
-            try:
+            chanop = user_input[1]
+            if chanop == "PRIVMSG":
                 command = user_input[3]
                 try: thread.start_new_thread(self.handler[command], (self,data))
                 except KeyError: pass #Unhandled
-            except:
-                pass #Not a trigger
+            elif chanop == "JOIN":
+                try: thread.start_new_thread(self.joinhandler, (self,data))
+                except: pass
+            elif chanop == "PART":
+                try: thread.start_new_thread(self.parthandler(self,data))
+                except: pass
 
             #Debug messages
             if self.debug == True:

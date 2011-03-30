@@ -38,17 +38,15 @@ class aidsbot ():
         self.handler = {}
 
     def connect(self):
+        '''Connect'''
         self.socket = socket.socket()
         self.socket.connect((self.network, self.port))
         self.socket.send("NICK %s\r\n" % self.botname)
         self.socket.send("USER %s %s bla :%s\r\n" % (self.botname, self.network, self.botname))
     
-    def join(self, channel, message = ''):
+    def join(self, channel):
         '''Join channel'''
         self.socket.send("JOIN :%s\r\n" % channel)
-        
-        if message != '':
-            self.send(channel, message)
     
     def send(self, target, message):
         '''Send message to target'''
@@ -91,13 +89,13 @@ class aidsbot ():
         '''Listener, should be started from listen() instead'''
         while self.run:
             data = self.socket.recv(512)
-            
+
+            #Handle ping
             if data.find('PING') != -1:
                 self.socket.send('PONG ' + data.split()[1] + "\r\n")
 
-            user_input = data.split()
-
             #Handle user commands
+            user_input = data.split()
             try:
                 command = user_input[3]
                 try: thread.start_new_thread(self.handler[command], (self,data))
@@ -105,6 +103,6 @@ class aidsbot ():
             except:
                 pass #Not a trigger
 
+            #Debug messages
             if self.debug == True:
                 print data
-

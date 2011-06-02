@@ -41,21 +41,25 @@ class aidsbot ():
         '''Connect'''
         self.socket = socket.socket()
         self.socket.connect((self.network, self.port))
-        self.socket.send("NICK %s\r\n" % self.botname)
-        self.socket.send("USER %s %s bla :%s\r\n" % (self.botname, self.network, self.botname))
+        self.send("NICK %s" % self.botname)
+        self.send("USER %s %s bla :%s" % (self.botname, self.network, self.botname))
     
     def join(self, channel):
         '''Join channel'''
-        self.socket.send("JOIN :%s\r\n" % channel)
+        self.send("JOIN :%s" % channel)
     
-    def send(self, target, message):
+    def privmsg(self, target, message):
         '''Send message to target'''
-        self.socket.send("PRIVMSG %s :%s\r\n" % (target, message))
+        self.send("PRIVMSG %s :%s" % (target, message))
+    
+    def send(self, command):
+        '''Send a raw command to the socket'''
+        self.socket.send("%s\r\n" % command)
     
     def stop(self):
         '''Stop the server'''
         self.run = False
-        self.socket.send('QUIT')
+        self.send('QUIT')
         self.socket.close()
 
     def handler_add(self,command,function):
@@ -101,7 +105,7 @@ class aidsbot ():
 
             #Handle ping
             if data.find('PING') != -1:
-                self.socket.send('PONG ' + data.split()[1] + "\r\n")
+                self.send('PONG ' + data.split()[1] + "\r\n")
 
             #Handle user commands
             user_input = data.split()

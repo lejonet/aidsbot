@@ -28,14 +28,14 @@ import threading
 
 class aidsbot ():
     '''Handle IRC connections'''
-    def __init__(self, botname, network, port, owner, debug = False):
+    def __init__(self, botname, network, port, debug = False):
         self.network = network
         self.port    = port
         self.botname = botname
-        self.owner   = owner
         self.debug   = debug
         self.run     = True
-        self.handler = {}
+        self.privmsghandler = {}
+        self.chanophandler  = {}
         self.chanlist= []
         self.failed  = False
 
@@ -66,25 +66,21 @@ class aidsbot ():
             return None
     
     def stop(self):
-        '''Stop the server'''
+        '''Stop'''
         self.run = False
         self.send('QUIT')
         self.socket.close()
 
-    def handler_add(self,command,function):
-        '''Add function as handler for command'''
+    def privmsghandler_add(self,command,function):
+        '''Add function as handler for trigger'''
         command = ":" + command
-        self.handler[command]=function
+        self.privmsghandler[command]=function
 
-    def joinhandler(self,function):
-        '''Set joinhandler'''
-        self.joinhandler=function
+    def chanophandler_add(self,chanop,function):
+        '''Add function as handler for channel operation'''
+        self.chanophandler[chanop]=function
 
-    def parthandler(self,function):
-        '''Set parthandler'''
-        self.parthandler=function
-
-    def data_split(self,data):
+    def privmsg_split(self,data):
         '''Split data for easy usage'''
         data = data.split()
         user_info = data[0]
@@ -112,7 +108,7 @@ class aidsbot ():
         while self.run:
             data = self.socket.recv(512)
 
-            #Handle ping
+            #Reply to ping :)
             if data.find('PING') != -1:
                 self.send('PONG ' + data.split()[1] + "\r\n")
 
@@ -121,21 +117,16 @@ class aidsbot ():
             try:
                 chanop = user_input[1]
             except IndexError:
-                chanop = "FAIL"
+                chanop = "FAIL" #Network failed
 
+            #Check for trigger
             if chanop == "PRIVMSG":
                 command = user_input[3]
-                try: thread.start_new_thread(self.handler[command], (self,data))
+                try:
+                    thread.start_new_thread(self.privmsghandler[command], (self,data))
                 except KeyError: pass #Unhandled
-            elif chanop == "JOIN":
-                try: thread.start_new_thread(self.joinhandler, (self,data))
-                except: pass
-            elif chanop == "PART":
-                try: thread.start_new_thread(self.parthandler(self,data))
-                except: pass
             elif chanop == "FAIL":
                 #Reconnect if failure
-                #FIXME: Raise exception
                 self.failed=True
                 while self.failed:
                     time.sleep(5)
@@ -145,6 +136,10 @@ class aidsbot ():
                         pass
                 for chan in self.chanlist:
                     self.join(chan,False)
+
+            #Always try chanop
+            try: thread.start_new_thread(self.chanophandler[chanop], (self,data))
+            except: pass #Unhandled
 
             #Debug messages
             if self.debug == True:

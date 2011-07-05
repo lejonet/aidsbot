@@ -36,25 +36,34 @@ class aidsbot ():
         self.debug   = debug
         self.run     = True
         self.handler = {}
+        self.chanlist= []
+        self.failed  = False
 
     def connect(self):
         '''Connect'''
         self.socket = socket.socket()
         self.socket.connect((self.network, self.port))
-        self.send("NICK %s" % self.botname)
-        self.send("USER %s %s bla :%s" % (self.botname, self.network, self.botname))
+        self.send("NICK %s" % (self.botname),True)
+        self.send("USER %s %s bla :%s" % (self.botname, self.network, self.botname),True)
+        self.failed=False
     
-    def join(self, channel):
+    def join(self, channel, addlist=True):
         '''Join channel'''
-        self.send("JOIN :%s" % channel)
+        if addlist:
+            self.chanlist.append(channel)
+        return self.send("JOIN :%s" % channel)
     
     def privmsg(self, target, message):
         '''Send message to target'''
-        self.send("PRIVMSG %s :%s" % (target, message))
+        return self.send("PRIVMSG %s :%s" % (target, message))
     
-    def send(self, command):
+    def send(self, command, override=False):
         '''Send a raw command to the socket'''
-        self.socket.send("%s\r\n" % command)
+        #Dont try to send if network has failed
+        if not self.failed or override:
+            self.socket.send("%s\r\n" % command)
+        else:
+            return None
     
     def stop(self):
         '''Stop the server'''
@@ -109,7 +118,11 @@ class aidsbot ():
 
             #Handle user commands
             user_input = data.split()
-            chanop = user_input[1]
+            try:
+                chanop = user_input[1]
+            except IndexError:
+                chanop = "FAIL"
+
             if chanop == "PRIVMSG":
                 command = user_input[3]
                 try: thread.start_new_thread(self.handler[command], (self,data))
@@ -120,6 +133,18 @@ class aidsbot ():
             elif chanop == "PART":
                 try: thread.start_new_thread(self.parthandler(self,data))
                 except: pass
+            elif chanop == "FAIL":
+                #Reconnect if failure
+                #FIXME: Raise exception
+                self.failed=True
+                while self.failed:
+                    time.sleep(5)
+                    try:
+                        self.connect()
+                    except socket.error:
+                        pass
+                for chan in self.chanlist:
+                    self.join(chan,False)
 
             #Debug messages
             if self.debug == True:

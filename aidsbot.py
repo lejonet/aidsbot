@@ -46,8 +46,10 @@ class aidsbot ():
         self.socket.connect((self.network, self.port))
         self.send("NICK %s" % (self.botname),True)
         self.send("USER %s %s bla :%s" % (self.botname, self.network, self.botname),True)
+        try: self.postconnect(self)
+        except: pass
         self.failed=False
-    
+
     def join(self, channel, addlist=True):
         '''Join channel'''
         if addlist:

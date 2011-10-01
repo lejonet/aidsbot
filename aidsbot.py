@@ -136,7 +136,7 @@ class aidsbot ():
                     try:
                         self.connect()
                     except socket.error:
-                        pass
+                        self.failed=True
                 for chan in self.chanlist:
                     self.join(chan,False)
 

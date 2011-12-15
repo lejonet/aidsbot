@@ -59,6 +59,15 @@ class aidsbot ():
     def privmsg(self, target, message):
         '''Send message to target'''
         return self.send("PRIVMSG %s :%s" % (target, message))
+
+    def mode(self, user, mode, channel):
+        '''Change user/channel modes on target'''
+        return self.send("MODE %s %s %s" % (channel, mode, user))
+    
+    def kick(self, channel, user, reason = None):
+        '''Kick user from channel for reason'''
+        return self.send("KICK %s %s :%s" % (channel, user, reason))
+    
     
     def send(self, command, override=False):
         '''Send a raw command to the socket'''

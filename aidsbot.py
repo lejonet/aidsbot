@@ -60,7 +60,7 @@ class aidsbot ():
         '''Send message to target'''
         return self.send("PRIVMSG %s :%s" % (target, message))
 
-    def mode(self, user, mode, channel):
+    def mode(self, user, mode, channel = ''):
         '''Change user/channel modes on target'''
         return self.send("MODE %s %s %s" % (channel, mode, user))
     
